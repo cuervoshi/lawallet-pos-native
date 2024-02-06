@@ -7,7 +7,7 @@ interface QRCodeProps {
   size: number;
 }
 
-export const QRCode = styled.View<QRCodeProps>`
+export const QRCode = styled.TouchableOpacity<QRCodeProps>`
   position: relative;
 
   display: flex;

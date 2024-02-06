@@ -3,6 +3,7 @@
 import ReactQRCode from 'react-qr-code';
 import {QRCode as QRCodeStyles} from './style';
 import theme from '../../styles/theme';
+import Clipboard from '@react-native-clipboard/clipboard';
 
 interface ComponentProps {
   value: string;
@@ -21,10 +22,12 @@ export function QRCode({value, size = 150, borderSize = 40}: ComponentProps) {
     //     type: res ? 'success' : 'error',
     //   });
     // });
+
+    Clipboard.setString(text);
   };
 
   return (
-    <QRCodeStyles size={size + borderSize}>
+    <QRCodeStyles size={size + borderSize} onPress={() => handleCopy(value)}>
       <ReactQRCode
         value={value}
         size={size}
