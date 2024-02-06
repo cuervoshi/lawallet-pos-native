@@ -63,3 +63,9 @@ export const parseLUD16Info = async (data: string) => {
 
   return receiverInfo;
 };
+
+export const generateInvoice = (callback: string, mSats: number) =>
+  fetch(`${callback}?amount=${mSats}`)
+    .then((res) => res.json())
+    .then((invoiceInfo) => (invoiceInfo && invoiceInfo.pr ? invoiceInfo.pr.toLowerCase() : ''))
+    .catch(() => '');

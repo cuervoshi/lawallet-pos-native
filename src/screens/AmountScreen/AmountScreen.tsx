@@ -5,48 +5,41 @@
  * @format
  */
 
-import React, {useEffect} from 'react';
+import React from 'react';
 import {Text} from 'react-native';
-import nfcManager, {Ndef, NfcTech, TagEvent} from 'react-native-nfc-manager';
 
+import {NavigationProp, useNavigation} from '@react-navigation/native';
+import {AppStackParamList} from '../../App';
 import Button from '../../components/Button';
 import Container from '../../components/Container';
 import Divider from '../../components/Divider';
 import Flex from '../../components/Flex';
 import Heading from '../../components/Heading';
 import Keyboard from '../../components/Keyboard';
-import {useNumpad} from '../../hooks/useNumpad';
 import {useAppContext} from '../../context/AppContext';
-import {NavigationProp, useNavigation} from '@react-navigation/native';
-import {AppStackParamList} from '../../App';
+import {useNumpad} from '../../hooks/useNumpad';
+import {generateInvoice} from '../../lib/utils';
 
 function AmountScreen(): React.JSX.Element {
   const {navigate} = useNavigation<NavigationProp<AppStackParamList>>();
   const {receiverInfo} = useAppContext();
   const numpadData = useNumpad('SAT', 10000000);
 
-  useEffect(() => {
-    nfcManager.isSupported().then(res => {
-      if (res) nfcManager.start();
-    });
-  }, []);
+  const handleCreateInvoice = async () => {
+    if (!receiverInfo || !receiverInfo.payRequest.callback) return;
+    const mSats: number = numpadData.intAmount['SAT'] * 1000;
 
-  async function readNdef() {
-    try {
-      console.log('start read');
-      await nfcManager.requestTechnology(NfcTech.Ndef);
-
-      const tag: TagEvent | null = await nfcManager.getTag();
-      const payload: number[] = tag?.ndefMessage[0].payload ?? [];
-      const msgBuffer: Uint8Array = Uint8Array.from(payload);
-
-      console.log(Ndef.text.decodePayload(msgBuffer));
-    } catch (ex) {
-      console.warn('Oops!', ex);
-    } finally {
-      nfcManager.cancelTechnologyRequest();
+    if (mSats === 0 || mSats > receiverInfo.payRequest.maxSendable!) {
+      return;
     }
-  }
+
+    const pr: string = await generateInvoice(
+      receiverInfo.payRequest.callback,
+      numpadData.intAmount['SAT'] * 1000,
+    );
+
+    navigate('Pago', {pr, amount: mSats / 1000});
+  };
 
   return (
     <Container size="small">
@@ -72,11 +65,7 @@ function AmountScreen(): React.JSX.Element {
       <Divider y={24} />
 
       <Flex flex={1} gap={16} justify="end" align="center">
-        <Button
-          onClick={() => {
-            navigate('Pago');
-          }}
-          disabled={false}>
+        <Button onClick={handleCreateInvoice} disabled={false}>
           <Text>Generar</Text>
         </Button>
       </Flex>

@@ -11,7 +11,10 @@ import PaymentScreen from './screens/PaymentScreen/PaymentScreen';
 export type AppStackParamList = {
   Inicio: undefined;
   Monto: undefined;
-  Pago: undefined;
+  Pago: {
+    pr: string;
+    amount: number;
+  };
 };
 
 const Stack = createNativeStackNavigator<AppStackParamList>();
