@@ -8,8 +8,10 @@ import Divider from '../../components/Divider';
 import {useAppContext} from '../../context/AppContext';
 
 const HomeScreen = () => {
-  const {address, saveAddress} = useAppContext();
-  const [newAddress, setNewAddress] = useState<string>(address);
+  const {receiverInfo, saveAddress} = useAppContext();
+  const [newAddress, setNewAddress] = useState<string>(
+    receiverInfo?.lud16 ?? '',
+  );
 
   const handleChangeAddress = (text: string) => {
     setNewAddress(text);
@@ -31,7 +33,6 @@ const HomeScreen = () => {
           <Button
             onClick={() => {
               if (!newAddress.length) return;
-
               saveAddress(newAddress);
             }}>
             <Text>Guardar</Text>

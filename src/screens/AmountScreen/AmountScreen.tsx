@@ -22,7 +22,7 @@ import {AppStackParamList} from '../../App';
 
 function AmountScreen(): React.JSX.Element {
   const {navigate} = useNavigation<NavigationProp<AppStackParamList>>();
-  const {address} = useAppContext();
+  const {receiverInfo} = useAppContext();
   const numpadData = useNumpad('SAT', 10000000);
 
   useEffect(() => {
@@ -51,7 +51,7 @@ function AmountScreen(): React.JSX.Element {
   return (
     <Container size="small">
       <Flex flex={1} justify="center">
-        <Text>{address}</Text>
+        <Text>{receiverInfo?.lud16 ?? ''}</Text>
       </Flex>
 
       <Flex flex={1} direction="column" align="center" justify="center">

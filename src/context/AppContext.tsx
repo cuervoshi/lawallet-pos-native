@@ -2,34 +2,49 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {NavigationProp, useNavigation} from '@react-navigation/native';
 import * as React from 'react';
 import {AppStackParamList} from '../App';
+import {LNRequestResponse, parseLUD16Info, validateEmail} from '../lib/utils';
+
+export type ReceiverInformation =
+  | {
+      lud16: string;
+      payRequest: LNRequestResponse;
+    }
+  | undefined;
 
 type AppContextType = {
-  address: string;
+  receiverInfo: ReceiverInformation;
   saveAddress: (lud16: string) => void;
 };
 
 const AppContext = React.createContext<AppContextType>({
-  address: '',
+  receiverInfo: undefined,
   saveAddress: () => null,
 });
 
 export const AppProvider = ({children}: React.PropsWithChildren<any>) => {
-  const [address, setAddress] = React.useState<string>('');
+  const [receiverInfo, setReceiverInfo] =
+    React.useState<ReceiverInformation>(undefined);
 
   const {navigate} = useNavigation<NavigationProp<AppStackParamList>>();
 
   const loadStoragedAddress = async () => {
-    const storagedAddress = await AsyncStorage.getItem('lud16');
-    if (!storagedAddress) return;
+    const storagedInfo = await AsyncStorage.getItem('lud16');
+    if (!storagedInfo) return;
 
-    setAddress(storagedAddress);
+    const receiver = JSON.parse(storagedInfo);
+    setReceiverInfo(receiver);
     navigate('Monto');
   };
 
   const saveAddress = async (lud16: string) => {
-    setAddress(lud16);
-    AsyncStorage.setItem('lud16', lud16);
+    const isValidAddress = validateEmail(lud16);
+    if (!isValidAddress) return false;
+
+    const receiverInfo: ReceiverInformation = await parseLUD16Info(lud16);
+    AsyncStorage.setItem('lud16', JSON.stringify(receiverInfo));
+    setReceiverInfo(receiverInfo);
     navigate('Monto');
+    return true;
   };
 
   React.useEffect(() => {
@@ -37,7 +52,7 @@ export const AppProvider = ({children}: React.PropsWithChildren<any>) => {
   }, []);
 
   const value = {
-    address,
+    receiverInfo,
     saveAddress,
   };
 

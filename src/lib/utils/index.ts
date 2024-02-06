@@ -1,253 +1,65 @@
-import config from '@/constants/config'
-import { getUserPubkey } from '@/interceptors/identity'
-import {
-  TransferInformation,
-  defaultTransfer,
-  getWalletService
-} from '@/interceptors/transaction'
-import { TransferTypes } from '@/types/transaction'
-import bolt11 from 'light-bolt11-decoder'
-import lnurl from './lnurl'
-import { validateEmail } from './email'
+import { ReceiverInformation } from "../../context/AppContext";
 
-export const formatBigNumber = (number: number | string) => {
-  return Number(number).toLocaleString('es-ES')
-}
-
-export const decodeInvoice = (invoice: string) => {
-  const decodedInvoice = bolt11.decode(invoice)
-  return decodedInvoice
+export interface LNRequestResponse {
+  tag: string;
+  callback: string;
+  metadata: string;
+  commentAllowed: number;
+  minSendable?: number;
+  maxSendable?: number;
+  k1?: string;
+  minWithdrawable?: number;
+  maxWithdrawable?: number;
 }
 
 export const nowInSeconds = (): number => {
-  return Math.floor(Date.now() / 1000)
-}
+  return Math.floor(Date.now() / 1000);
+};
 
-export const detectTransferType = (data: string): TransferTypes | false => {
-  if (!data.length) return false
+export const validateEmail = (email: string): RegExpMatchArray | null => {
+  return email.match(
+    /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
+  );
+};
 
-  const upperStr: string = data.toUpperCase()
-  const isLUD16 = validateEmail(upperStr)
-  if (isLUD16) {
-    const domain: string = upperStr.split('@')[1]
+export const getPayRequest = async (url: string): Promise<LNRequestResponse> => {
+  return fetch(url)
+    .then((res) => {
+      if (res.status !== 200) return null;
+      return res.json();
+    })
+    .then((walletInfo) => {
+      if (!walletInfo) return null;
 
-    return domain.toUpperCase() === config.env.WALLET_DOMAIN.toUpperCase()
-      ? TransferTypes.INTERNAL
-      : TransferTypes.LUD16
-  }
-
-  if (upperStr.startsWith('LNURL')) return TransferTypes.LNURL
-  if (upperStr.startsWith('LNBC')) return TransferTypes.INVOICE
-
-  if (data.length > 15) return false
-  return TransferTypes.INTERNAL
-}
-
-const parseInvoiceInfo = (invoice: string) => {
-  const decodedInvoice = decodeInvoice(invoice)
-  const invoiceAmount = decodedInvoice.sections.find(
-    (section: Record<string, string>) => section.name === 'amount'
-  )
-
-  if (!invoiceAmount) return defaultTransfer
-
-  const createdAt = decodedInvoice.sections.find(
-    (section: Record<string, string>) => section.name === 'timestamp'
-  )
-
-  const transfer: TransferInformation = {
-    ...defaultTransfer,
-    data: invoice.toLowerCase(),
-    type: TransferTypes.INVOICE,
-    amount: invoiceAmount.value / 1000,
-    expired: false
-  }
-
-  if (createdAt && createdAt.value) {
-    const expirationDate: number =
-      (createdAt.value + decodedInvoice.expiry) * 1000
-    if (expirationDate < Date.now()) transfer.expired = true
-  }
-
-  return transfer
-}
-
-const removeHttpOrHttps = (str: string) => {
-  if (str.startsWith('http://')) return str.replace('http://', '')
-  if (str.startsWith('https://')) return str.replace('https://', '')
-
-  return str
-}
-
-const isInternalLNURL = (decodedLNURL: string): string => {
-  const urlWithoutHttp: string = removeHttpOrHttps(decodedLNURL)
-  const [domain, , , username] = urlWithoutHttp.split('/')
-  if (domain === config.env.WALLET_DOMAIN && username)
-    return `${username}@${domain}`
-
-  return ''
-}
-
-const parseLNURLInfo = async (data: string) => {
-  const decodedLNURL = lnurl.decode(data)
-  const internalLUD16: string = isInternalLNURL(decodedLNURL)
-  if (internalLUD16.length) return parseINTERNALInfo(internalLUD16)
-
-  const walletService = await getWalletService(decodedLNURL)
-  if (!walletService) return defaultTransfer
-
-  const transfer: TransferInformation = {
-    ...defaultTransfer,
-    data,
-    type: TransferTypes.LNURL,
-    walletService
-  }
-
-  if (walletService.tag === 'payRequest') {
-    try {
-      const parsedMetadata: Array<string>[] = JSON.parse(walletService.metadata)
-      const identifier: string[] | undefined = parsedMetadata.find(
-        (data: string[]) => {
-          if (data[0] === 'text/identifier') return data
-        }
-      )
-
-      if (identifier && identifier.length === 2) transfer.data = identifier[1]
-    } catch (error) {
-      console.log(error)
-    }
-  } else if (walletService.tag === 'withdrawRequest') {
-    transfer.type = TransferTypes.LNURLW
-    transfer.amount = walletService.maxWithdrawable! / 1000
-  }
-
-  return transfer
-}
+      return walletInfo;
+    })
+    .catch(() => null);
+};
 
 export const splitHandle = (handle: string): string[] => {
-  if (handle.includes('@')) {
-    const [username, domain] = handle.split('@')
-    return [username, domain]
-  } else {
-    return [handle, config.env.WALLET_DOMAIN]
-  }
-}
+  if (!handle.length) return [];
 
-const parseLUD16Info = async (data: string) => {
-  const [username, domain] = splitHandle(data)
-  const walletService = await getWalletService(
-    `https://${domain}/.well-known/lnurlp/${username}`
-  )
-  if (!walletService) return defaultTransfer
-
-  const transfer: TransferInformation = {
-    ...defaultTransfer,
-    data,
-    type: TransferTypes.LUD16,
-    walletService
-  }
-
-  if (walletService.minSendable == walletService.maxSendable)
-    transfer.amount = walletService.maxSendable! / 1000
-
-  return transfer
-}
-
-const parseINTERNALInfo = async (data: string) => {
-  const [username] = splitHandle(data)
-  const receiverPubkey: string = await getUserPubkey(username)
-  if (!receiverPubkey) return defaultTransfer
-
-  const transfer: TransferInformation = {
-    ...defaultTransfer,
-    data,
-    type: TransferTypes.INTERNAL,
-    receiverPubkey
-  }
-
-  return transfer
-}
-
-export const removeLightningStandard = (str: string) => {
-  const lowStr: string = str.toLowerCase()
-
-  return lowStr.startsWith('lightning://')
-    ? lowStr.replace('lightning://', '')
-    : lowStr.startsWith('lightning:')
-      ? lowStr.replace('lightning:', '')
-      : lowStr
-}
-
-export const formatTransferData = async (
-  data: string
-): Promise<TransferInformation> => {
-  if (!data.length) return defaultTransfer
-
-  const cleanStr: string = removeLightningStandard(data)
-  const decodedTransferType: TransferTypes | false =
-    detectTransferType(cleanStr)
-
-  if (!decodedTransferType) return defaultTransfer
-
-  switch (decodedTransferType) {
-    case TransferTypes.INVOICE:
-      return parseInvoiceInfo(cleanStr)
-
-    case TransferTypes.LNURL:
-      return parseLNURLInfo(cleanStr)
-
-    case TransferTypes.LUD16:
-      return parseLUD16Info(cleanStr)
-
-    default:
-      return parseINTERNALInfo(cleanStr)
-  }
-}
-
-export function checkIOS(navigator: Navigator) {
-  if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
-    return true
-  } else {
-    return Boolean(
-      navigator.maxTouchPoints &&
-        navigator.maxTouchPoints > 2 &&
-        /MacIntel/.test(navigator.userAgent)
-    )
-  }
-}
-
-export function addQueryParameter(url: string, parameter: string) {
-  if (url.indexOf('?') === -1) {
-    return url + '?' + parameter
-  } else {
-    return url + '&' + parameter
-  }
-}
-
-export function parseContent(content: string) {
   try {
-    const parsed = JSON.parse(content)
-    return parsed
+    if (handle.includes('@')) {
+      const [username, domain] = handle.split('@');
+      return [username!, domain!];
+    } else {
+      return [handle, "lawallet.ar"];
+    }
   } catch {
-    return {}
+    return [];
   }
-}
+};
 
-export function escapingBrackets(text: string) {
-  return text.replace(/\[/g, '\\[\\').replace(/]/g, '\\]\\')
-}
+export const parseLUD16Info = async (data: string) => {
+  const [username, domain] = splitHandle(data);
+  const payRequest = await getPayRequest(`https://${domain}/.well-known/lnurlp/${username}`);
+  if (!payRequest) return;
 
-export function unescapingText(text: string) {
-  return text.replace(/\\/g, '')
-}
+  const receiverInfo: ReceiverInformation = {
+    lud16: `${username}@${domain}`,
+    payRequest: payRequest,
+  };
 
-export function extractEscappedMessage(text: string) {
-  const regex = /(?<!\\)\[([^\]]+)]/g
-  const fragments = text.split(regex)
-
-  const escappedMessage = fragments
-    .filter((_, index) => index % 2 === 0)
-    .join('')
-
-  return escappedMessage
-}
+  return receiverInfo;
+};
