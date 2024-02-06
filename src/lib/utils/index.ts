@@ -64,6 +64,26 @@ export const parseLUD16Info = async (data: string) => {
   return receiverInfo;
 };
 
+export const claimLNURLw = async (
+  callback: string,
+  k1: string,
+  pr: string
+): Promise<boolean> => {
+  if (!callback || !k1 || !pr) return false;
+
+  try {
+
+    let urlCallback: string = `${callback}?k1=${k1}&pr=${pr}`;
+
+    return fetch(urlCallback).then((res) => {
+      return res.status === 200;
+    });
+  } catch (err) {
+    console.log(err)
+    return false;
+  }
+};
+
 export const generateInvoice = (callback: string, mSats: number) =>
   fetch(`${callback}?amount=${mSats}`)
     .then((res) => res.json())

@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {ActivityIndicator, Text} from 'react-native';
+import {ActivityIndicator, Text, TouchableOpacity} from 'react-native';
 import Container from '../../components/Container';
 import Flex from '../../components/Flex';
 import Divider from '../../components/Divider';
@@ -7,6 +7,7 @@ import {QRCode} from '../../components/QRCode';
 import nfcManager, {Ndef, NfcTech, TagEvent} from 'react-native-nfc-manager';
 import {NavigationProp, useNavigation} from '@react-navigation/native';
 import {AppStackParamList} from '../../App';
+import {claimLNURLw, getPayRequest} from '../../lib/utils';
 
 const PaymentScreen = ({
   route,
@@ -43,7 +44,30 @@ const PaymentScreen = ({
         const payload: number[] = tag?.ndefMessage[0].payload ?? [];
         const msgBuffer: Uint8Array = Uint8Array.from(payload);
 
-        console.log(Ndef.text.decodePayload(msgBuffer));
+        const decodedTag: string = Ndef.text.decodePayload(msgBuffer);
+        if (!decodedTag.startsWith('lnurlw://')) return;
+
+        const URLWithdrawRequest: string = decodedTag.replace(
+          'lnurlw://',
+          'https://',
+        );
+
+        const wRequest = await getPayRequest(URLWithdrawRequest);
+        if (
+          !wRequest ||
+          !wRequest.callback ||
+          !wRequest.k1 ||
+          wRequest.maxWithdrawable! < route!.params.amount
+        )
+          return;
+
+        const claimed: boolean = await claimLNURLw(
+          wRequest.callback,
+          wRequest.k1,
+          route!.params.pr,
+        );
+
+        if (claimed) navigate('Monto');
       } catch (ex) {
         console.warn('Oops!', ex);
       } finally {
@@ -66,6 +90,14 @@ const PaymentScreen = ({
 
       <Flex direction="column" justify="center" align="center" flex={1} gap={8}>
         <Text>Esperando pago de {route.params.amount} SATs...</Text>
+
+        <Divider y={24} />
+
+        {nfcSupported && (
+          <TouchableOpacity onPress={readNdef}>
+            <Text>Scan NFC</Text>
+          </TouchableOpacity>
+        )}
 
         <Divider y={24} />
 
