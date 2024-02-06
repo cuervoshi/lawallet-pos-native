@@ -6,10 +6,12 @@ import AmountScreen from './screens/AmountScreen/AmountScreen';
 import {StatusBar, useColorScheme} from 'react-native';
 import {CustomDarkTheme, CustomLightTheme} from './constants/themes';
 import {AppProvider} from './context/AppContext';
+import PaymentScreen from './screens/PaymentScreen/PaymentScreen';
 
 export type AppStackParamList = {
   Inicio: undefined;
-  'Definir monto': undefined;
+  Monto: undefined;
+  Pago: undefined;
 };
 
 const Stack = createNativeStackNavigator<AppStackParamList>();
@@ -28,7 +30,8 @@ const App = () => {
       <AppProvider>
         <Stack.Navigator>
           <Stack.Screen name="Inicio" component={HomeScreen} />
-          <Stack.Screen name="Definir monto" component={AmountScreen} />
+          <Stack.Screen name="Monto" component={AmountScreen} />
+          <Stack.Screen name="Pago" component={PaymentScreen} />
         </Stack.Navigator>
       </AppProvider>
     </NavigationContainer>

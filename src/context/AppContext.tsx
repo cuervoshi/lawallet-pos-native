@@ -23,13 +23,13 @@ export const AppProvider = ({children}: React.PropsWithChildren<any>) => {
     if (!storagedAddress) return;
 
     setAddress(storagedAddress);
-    navigate('Definir monto');
+    navigate('Monto');
   };
 
   const saveAddress = async (lud16: string) => {
     setAddress(lud16);
     AsyncStorage.setItem('lud16', lud16);
-    navigate('Definir monto');
+    navigate('Monto');
   };
 
   React.useEffect(() => {

@@ -17,8 +17,11 @@ import Heading from '../../components/Heading';
 import Keyboard from '../../components/Keyboard';
 import {useNumpad} from '../../hooks/useNumpad';
 import {useAppContext} from '../../context/AppContext';
+import {NavigationProp, useNavigation} from '@react-navigation/native';
+import {AppStackParamList} from '../../App';
 
 function AmountScreen(): React.JSX.Element {
+  const {navigate} = useNavigation<NavigationProp<AppStackParamList>>();
   const {address} = useAppContext();
   const numpadData = useNumpad('SAT', 10000000);
 
@@ -59,18 +62,24 @@ function AmountScreen(): React.JSX.Element {
 
         <Keyboard numpadData={numpadData} />
       </Flex>
-
-      <Divider y={24} />
-
-      <Flex flex={1} gap={8} justify="center" align="center">
-        <Button onClick={() => null} disabled={false}>
-          <Text>Generar</Text>
-        </Button>
-      </Flex>
-
       {/* <TouchableOpacity onPress={readNdef}>
         <Text>Scan</Text>
       </TouchableOpacity> */}
+
+      <Divider y={24} />
+      <Divider y={24} />
+      <Divider y={24} />
+      <Divider y={24} />
+
+      <Flex flex={1} gap={16} justify="end" align="center">
+        <Button
+          onClick={() => {
+            navigate('Pago');
+          }}
+          disabled={false}>
+          <Text>Generar</Text>
+        </Button>
+      </Flex>
     </Container>
   );
 }
