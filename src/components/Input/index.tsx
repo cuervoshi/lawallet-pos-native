@@ -34,7 +34,7 @@ export default function Component(props: InputProps) {
   return (
     <InputBox $withIcon={isLoading}>
       <Input
-        onChange={onChange}
+        onChangeText={onChange}
         onFocus={onFocus}
         onBlur={onBlur}
         placeholder={placeholder}

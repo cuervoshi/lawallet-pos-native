@@ -16,8 +16,10 @@ import Flex from '../../components/Flex';
 import Heading from '../../components/Heading';
 import Keyboard from '../../components/Keyboard';
 import {useNumpad} from '../../hooks/useNumpad';
+import {useAppContext} from '../../context/AppContext';
 
 function AmountScreen(): React.JSX.Element {
+  const {address} = useAppContext();
   const numpadData = useNumpad('SAT', 10000000);
 
   useEffect(() => {
@@ -45,17 +47,22 @@ function AmountScreen(): React.JSX.Element {
 
   return (
     <Container size="small">
+      <Flex flex={1} justify="center">
+        <Text>{address}</Text>
+      </Flex>
+
       <Flex flex={1} direction="column" align="center" justify="center">
         <Heading>{numpadData.intAmount['SAT']}</Heading>
 
         <Divider y={24} />
+        <Divider y={24} />
 
         <Keyboard numpadData={numpadData} />
-
-        <Divider y={24} />
       </Flex>
 
-      <Flex gap={8}>
+      <Divider y={24} />
+
+      <Flex flex={1} gap={8} justify="center" align="center">
         <Button onClick={() => null} disabled={false}>
           <Text>Generar</Text>
         </Button>

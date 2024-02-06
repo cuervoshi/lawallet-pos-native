@@ -1,34 +1,39 @@
-import React, {useEffect} from 'react';
+import React, {useEffect, useState} from 'react';
 import Container from '../../components/Container';
 import Input from '../../components/Input';
 import Flex from '../../components/Flex';
 import Button from '../../components/Button';
 import {Text} from 'react-native';
 import Divider from '../../components/Divider';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import {useAppContext} from '../../context/AppContext';
 
 const HomeScreen = () => {
-  const loadStorage = async () => {
-    const lud16Storage = await AsyncStorage.getItem('lud16');
-    if (!lud16Storage) return;
+  const {address, saveAddress} = useAppContext();
+  const [newAddress, setNewAddress] = useState<string>(address);
 
-    // redirect to amount
+  const handleChangeAddress = (text: string) => {
+    setNewAddress(text);
   };
-
-  useEffect(() => {
-    loadStorage();
-  }, []);
 
   return (
     <Container size="small">
       <Flex flex={1} direction="column" align="center" justify="center">
-        <Input placeholder="usuario@lawallet.ar" />
+        <Input
+          placeholder="usuario@lawallet.ar"
+          value={newAddress}
+          onChange={handleChangeAddress}
+        />
 
         <Divider y={24} />
         <Divider y={24} />
 
         <Flex>
-          <Button onClick={() => null}>
+          <Button
+            onClick={() => {
+              if (!newAddress.length) return;
+
+              saveAddress(newAddress);
+            }}>
             <Text>Guardar</Text>
           </Button>
         </Flex>
