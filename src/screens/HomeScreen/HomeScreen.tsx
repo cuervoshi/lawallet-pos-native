@@ -17,6 +17,11 @@ const HomeScreen = () => {
     setNewAddress(text);
   };
 
+  useEffect(() => {
+    if (receiverInfo && receiverInfo.lud16) setNewAddress(receiverInfo.lud16)
+  }, [receiverInfo])
+  
+
   return (
     <Container size="small">
       <Flex flex={1} direction="column" align="center" justify="center">

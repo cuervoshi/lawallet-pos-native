@@ -28,7 +28,7 @@ export const AppProvider = ({children}: React.PropsWithChildren<any>) => {
   const {navigate} = useNavigation<NavigationProp<AppStackParamList>>();
 
   const loadStoragedAddress = async () => {
-    const storagedInfo = await AsyncStorage.getItem('lud16');
+    const storagedInfo = await AsyncStorage.getItem('receiver');
     if (!storagedInfo) return;
 
     const receiver = JSON.parse(storagedInfo);
@@ -41,7 +41,7 @@ export const AppProvider = ({children}: React.PropsWithChildren<any>) => {
     if (!isValidAddress) return false;
 
     const receiverInfo: ReceiverInformation = await parseLUD16Info(lud16);
-    AsyncStorage.setItem('lud16', JSON.stringify(receiverInfo));
+    AsyncStorage.setItem('receiver', JSON.stringify(receiverInfo));
     setReceiverInfo(receiverInfo);
     navigate('Monto');
     return true;
