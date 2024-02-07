@@ -1,21 +1,55 @@
-import React, {useEffect, useState} from 'react';
-import {ActivityIndicator, Text, TouchableOpacity} from 'react-native';
-import Container from '../../components/Container';
-import Flex from '../../components/Flex';
-import Divider from '../../components/Divider';
-import {QRCode} from '../../components/QRCode';
-import nfcManager, {Ndef, NfcTech, TagEvent} from 'react-native-nfc-manager';
 import {NavigationProp, useNavigation} from '@react-navigation/native';
+import React, {useEffect} from 'react';
+import {ActivityIndicator, Text, TouchableOpacity} from 'react-native';
 import {AppStackParamList} from '../../App';
+import Container from '../../components/Container';
+import Divider from '../../components/Divider';
+import Flex from '../../components/Flex';
+import {QRCode} from '../../components/QRCode';
+import {useNdef} from '../../hooks/useNdef';
 import {claimLNURLw, getPayRequest} from '../../lib/utils';
+
+const lnurlwToHttps = (lnurlw: string) => {
+  const URLWithdrawRequest: string = lnurlw.replace('lnurlw://', 'https://');
+  return URLWithdrawRequest;
+};
 
 const PaymentScreen = ({
   route,
 }: {
   route?: {params: {pr: string; amount: number}};
 }) => {
-  const [nfcSupported, setNfcSupported] = useState<boolean>(false);
   const {navigate} = useNavigation<NavigationProp<AppStackParamList>>();
+
+  const handleScanNdef = async (decodedPayload: string) => {
+    if (!decodedPayload.startsWith('lnurlw://')) return;
+
+    const wRequest = await getPayRequest(lnurlwToHttps(decodedPayload));
+    if (
+      !wRequest ||
+      !wRequest.callback ||
+      !wRequest.k1 ||
+      wRequest.maxWithdrawable! < route!.params.amount
+    )
+      return;
+
+    const claimed: boolean = await claimLNURLw(
+      wRequest.callback,
+      wRequest.k1,
+      route!.params.pr,
+    );
+
+    if (claimed) navigate('Monto');
+  };
+
+  const handleScanError = (err?: string) => {
+    console.log('error on scan tag: ', err);
+  };
+
+  const {nfcSupported, startReadTag, stopReadTag, isReading} = useNdef({
+    onScan: handleScanNdef,
+    onError: handleScanError,
+  });
 
   useEffect(() => {
     if (!route || !route.params || !route.params.pr) {
@@ -23,58 +57,6 @@ const PaymentScreen = ({
       return;
     }
   }, [route]);
-
-  useEffect(() => {
-    nfcManager
-      .isSupported()
-      .then(res => {
-        setNfcSupported(res);
-        if (res) nfcManager.start();
-      })
-      .catch(err => console.log(err));
-  }, []);
-
-  async function readNdef() {
-    if (nfcSupported) {
-      try {
-        console.log('start read');
-        await nfcManager.requestTechnology(NfcTech.Ndef);
-
-        const tag: TagEvent | null = await nfcManager.getTag();
-        const payload: number[] = tag?.ndefMessage[0].payload ?? [];
-        const msgBuffer: Uint8Array = Uint8Array.from(payload);
-
-        const decodedTag: string = Ndef.text.decodePayload(msgBuffer);
-        if (!decodedTag.startsWith('lnurlw://')) return;
-
-        const URLWithdrawRequest: string = decodedTag.replace(
-          'lnurlw://',
-          'https://',
-        );
-
-        const wRequest = await getPayRequest(URLWithdrawRequest);
-        if (
-          !wRequest ||
-          !wRequest.callback ||
-          !wRequest.k1 ||
-          wRequest.maxWithdrawable! < route!.params.amount
-        )
-          return;
-
-        const claimed: boolean = await claimLNURLw(
-          wRequest.callback,
-          wRequest.k1,
-          route!.params.pr,
-        );
-
-        if (claimed) navigate('Monto');
-      } catch (ex) {
-        console.warn('Oops!', ex);
-      } finally {
-        nfcManager.cancelTechnologyRequest();
-      }
-    }
-  }
 
   if (!route || !route.params || !route.params.pr) return;
 
@@ -93,10 +75,19 @@ const PaymentScreen = ({
 
         <Divider y={24} />
 
-        {nfcSupported && (
-          <TouchableOpacity onPress={readNdef}>
-            <Text>Scan NFC</Text>
-          </TouchableOpacity>
+        {isReading ? (
+          <>
+            <Text>Acerque la tarjeta al lector nfc</Text>
+            <TouchableOpacity onPress={stopReadTag}>
+              <Text>Stop scan</Text>
+            </TouchableOpacity>
+          </>
+        ) : (
+          nfcSupported && (
+            <TouchableOpacity onPress={startReadTag}>
+              <Text>Scan NFC</Text>
+            </TouchableOpacity>
+          )
         )}
 
         <Divider y={24} />
