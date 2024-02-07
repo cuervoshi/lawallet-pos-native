@@ -55,12 +55,8 @@ export default function Button(props: ButtonProps) {
     size = 'normal',
     loading = false,
     disabled = false,
-    tabIndex = 0,
     onClick,
-    onTouchStart,
     onTouchEnd,
-    onMouseDown,
-    onMouseUp,
   } = props;
 
   return (

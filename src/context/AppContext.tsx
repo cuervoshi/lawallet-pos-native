@@ -40,9 +40,9 @@ export const AppProvider = ({children}: React.PropsWithChildren<any>) => {
     const isValidAddress = validateEmail(lud16);
     if (!isValidAddress) return false;
 
-    const receiverInfo: ReceiverInformation = await parseLUD16Info(lud16);
-    AsyncStorage.setItem('receiver', JSON.stringify(receiverInfo));
-    setReceiverInfo(receiverInfo);
+    const recInfo: ReceiverInformation = await parseLUD16Info(lud16);
+    AsyncStorage.setItem('receiver', JSON.stringify(recInfo));
+    setReceiverInfo(recInfo);
     navigate('Monto');
     return true;
   };

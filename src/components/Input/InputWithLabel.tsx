@@ -16,7 +16,7 @@ interface InputWithLabelProps {
 }
 
 export default function Component(props: InputWithLabelProps) {
-  const {label, name, value = ''} = props;
+  const {name, value = ''} = props;
 
   return (
     <Flex direction="column" gap={8}>

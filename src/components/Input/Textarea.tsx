@@ -11,15 +11,7 @@ interface ComponentProps {
 }
 
 export default function Component(props: ComponentProps) {
-  const {
-    placeholder,
-    status,
-    onChange,
-    id = '',
-    name = '',
-    value,
-    disabled = false,
-  } = props;
+  const {placeholder, status, onChange, id = '', value} = props;
 
   return (
     <Textarea
@@ -28,6 +20,7 @@ export default function Component(props: ComponentProps) {
       placeholder={placeholder}
       onChange={onChange}
       $showValidate={!status}
-      $isSuccess={status && status === 'success'}></Textarea>
+      $isSuccess={status && status === 'success'}
+    />
   );
 }

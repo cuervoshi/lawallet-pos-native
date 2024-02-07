@@ -27,7 +27,7 @@ function AmountScreen(): React.JSX.Element {
 
   const handleCreateInvoice = async () => {
     if (!receiverInfo || !receiverInfo.payRequest.callback) return;
-    const mSats: number = numpadData.intAmount['SAT'] * 1000;
+    const mSats: number = numpadData.intAmount.SAT * 1000;
 
     if (mSats === 0 || mSats > receiverInfo.payRequest.maxSendable!) {
       return;
@@ -35,7 +35,7 @@ function AmountScreen(): React.JSX.Element {
 
     const pr: string = await generateInvoice(
       receiverInfo.payRequest.callback,
-      numpadData.intAmount['SAT'] * 1000,
+      numpadData.intAmount.SAT * 1000,
     );
 
     navigate('Pago', {pr, amount: mSats / 1000});
@@ -48,7 +48,7 @@ function AmountScreen(): React.JSX.Element {
       </Flex>
 
       <Flex flex={1} direction="column" align="center" justify="center">
-        <Heading>{numpadData.intAmount['SAT']}</Heading>
+        <Heading>{numpadData.intAmount.SAT}</Heading>
 
         <Divider y={24} />
         <Divider y={24} />

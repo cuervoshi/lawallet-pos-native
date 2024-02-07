@@ -1,4 +1,4 @@
-import { ReceiverInformation } from "../../context/AppContext";
+import {ReceiverInformation} from '../../context/AppContext';
 
 export interface LNRequestResponse {
   tag: string;
@@ -22,13 +22,15 @@ export const validateEmail = (email: string): RegExpMatchArray | null => {
   );
 };
 
-export const getPayRequest = async (url: string): Promise<LNRequestResponse> => {
+export const getPayRequest = async (
+  url: string,
+): Promise<LNRequestResponse> => {
   return fetch(url)
-    .then((res) => {
+    .then(res => {
       if (res.status !== 200) return null;
       return res.json();
     })
-    .then((walletInfo) => {
+    .then(walletInfo => {
       if (!walletInfo) return null;
 
       return walletInfo;
@@ -44,7 +46,7 @@ export const splitHandle = (handle: string): string[] => {
       const [username, domain] = handle.split('@');
       return [username!, domain!];
     } else {
-      return [handle, "lawallet.ar"];
+      return [handle, 'lawallet.ar'];
     }
   } catch {
     return [];
@@ -53,7 +55,9 @@ export const splitHandle = (handle: string): string[] => {
 
 export const parseLUD16Info = async (data: string) => {
   const [username, domain] = splitHandle(data);
-  const payRequest = await getPayRequest(`https://${domain}/.well-known/lnurlp/${username}`);
+  const payRequest = await getPayRequest(
+    `https://${domain}/.well-known/lnurlp/${username}`,
+  );
   if (!payRequest) return;
 
   const receiverInfo: ReceiverInformation = {
@@ -67,25 +71,26 @@ export const parseLUD16Info = async (data: string) => {
 export const claimLNURLw = async (
   callback: string,
   k1: string,
-  pr: string
+  pr: string,
 ): Promise<boolean> => {
   if (!callback || !k1 || !pr) return false;
 
   try {
-
     let urlCallback: string = `${callback}?k1=${k1}&pr=${pr}`;
 
-    return fetch(urlCallback).then((res) => {
+    return fetch(urlCallback).then(res => {
       return res.status === 200;
     });
   } catch (err) {
-    console.log(err)
+    console.log(err);
     return false;
   }
 };
 
 export const generateInvoice = (callback: string, mSats: number) =>
   fetch(`${callback}?amount=${mSats}`)
-    .then((res) => res.json())
-    .then((invoiceInfo) => (invoiceInfo && invoiceInfo.pr ? invoiceInfo.pr.toLowerCase() : ''))
+    .then(res => res.json())
+    .then(invoiceInfo =>
+      invoiceInfo && invoiceInfo.pr ? invoiceInfo.pr.toLowerCase() : '',
+    )
     .catch(() => '');

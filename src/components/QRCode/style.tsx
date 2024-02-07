@@ -20,7 +20,3 @@ export const QRCode = styled.TouchableOpacity<QRCodeProps>`
 
   cursor: pointer;
 `;
-
-interface ToastProps {
-  $isShow: boolean;
-}

@@ -18,9 +18,8 @@ const HomeScreen = () => {
   };
 
   useEffect(() => {
-    if (receiverInfo && receiverInfo.lud16) setNewAddress(receiverInfo.lud16)
-  }, [receiverInfo])
-  
+    if (receiverInfo && receiverInfo.lud16) setNewAddress(receiverInfo.lud16);
+  }, [receiverInfo]);
 
   return (
     <Container size="small">
