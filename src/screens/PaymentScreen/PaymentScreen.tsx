@@ -77,10 +77,10 @@ const PaymentScreen = ({
 
         {isReading ? (
           <>
-            <Text>Acerque la tarjeta al lector nfc</Text>
             <TouchableOpacity onPress={stopReadTag}>
               <Text>Stop scan</Text>
             </TouchableOpacity>
+            <Text>Acerque la tarjeta al lector nfc</Text>
           </>
         ) : (
           nfcSupported && (

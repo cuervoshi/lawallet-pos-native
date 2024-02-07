@@ -27,7 +27,9 @@ export const useNdef = (params: UseNdefParameters): UseNdefReturns => {
         await nfcManager.requestTechnology(NfcTech.Ndef);
 
         const tag: TagEvent | null = await nfcManager.getTag();
-        const payload: number[] = tag?.ndefMessage[0].payload ?? [];
+        if (!tag) return;
+
+        const payload: number[] = tag.ndefMessage[0].payload ?? [];
         const msgBuffer: Uint8Array = Uint8Array.from(payload);
 
         const decodedPayload: string = Ndef.text.decodePayload(msgBuffer);
@@ -35,8 +37,10 @@ export const useNdef = (params: UseNdefParameters): UseNdefReturns => {
 
         if (params.onScan) params.onScan(decodedPayload);
       } catch (ex) {
-        console.warn('Oops!', ex);
-        if (params.onError) params.onError((ex as Error).message ?? '');
+        if (ex && Object.keys(ex).length) {
+          console.warn('Oops!', ex);
+          if (params.onError) params.onError((ex as Error).message ?? '');
+        }
       } finally {
         stopReadTag();
       }
