@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import {Text} from 'react-native';
+import {Text, TouchableOpacity} from 'react-native';
 
 import {NavigationProp, useNavigation} from '@react-navigation/native';
 import {AppStackParamList} from '../../App';
@@ -55,9 +55,13 @@ function AmountScreen(): React.JSX.Element {
 
         <Keyboard numpadData={numpadData} />
       </Flex>
-      {/* <TouchableOpacity onPress={readNdef}>
+
+      <TouchableOpacity
+        onPress={async () => {
+          // CiontekPrinter.testPrint();
+        }}>
         <Text>Scan</Text>
-      </TouchableOpacity> */}
+      </TouchableOpacity>
 
       <Divider y={24} />
       <Divider y={24} />
